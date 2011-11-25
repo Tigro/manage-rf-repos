@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Set pre-rawhide branch
-PRE="16"
+PRE="17"
 
 usage(){
     echo "Usage: rf [--ver <version> ] [--repo <repo>] [--branch <branch>]"
     echo "  where"
-    echo "      version = 10 | 11 | 12 | 13 | 14 | pre | development"
+    echo "      version = 14 | 15 | 16 | pre | development"
     echo "      repo = free | nonfree | fixes"
     echo "      branch = releases | updates | updates-testing"
     exit 1;
@@ -226,13 +226,23 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm | grep -v "debuginfo"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        done
+
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+
+        cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+        for pack in $LINK32PACKS; do
+          ln -vf ../../i386/$pack
+        done
+        cd -
 
 	reindex_development
 	REINDEX="true"
 	;;
-      development/16)
+      development/$PRE)
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/source/SRPMS/
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/debug/
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
@@ -244,8 +254,18 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
           cd -
         done
 
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm | grep -v "debuginfo"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        done
+
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+
+        cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+        for pack in $LINK32PACKS; do
+          ln -vf ../../i386/$pack
+        done
+        cd -
 
         reindex_pre
         REINDEX="true"
@@ -262,13 +282,24 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        done
+
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/debug/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/os/
+
+        cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/os/
+        for pack in $LINK32PACKS; do
+          ln -vf ../../i386/$pack
+        done
+        cd -
 
 	reindex_releases
 	REINDEX="true"
 	;;
       updates)
+        unset LINK32PACKS
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/SRPMS/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/debug
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/
@@ -280,8 +311,18 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        done
+
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/debug/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/
+
+        cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/
+        for pack in $LINK32PACKS; do
+          ln -vf ../i386/$pack
+        done
+        cd -
 
 	reindex_updates
 	REINDEX="true"
@@ -298,8 +339,18 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        done
+
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/debug/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/
+
+        cd $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/
+        for pack in $LINK32PACKS; do
+          ln -vf ../i386/$pack
+        done
+        cd -
 
 	reindex_updates-testing
 	REINDEX="true"
