@@ -1,0 +1,361 @@
+#!/bin/bash
+
+# Set pre-rawhide branch
+PRE="16"
+
+usage(){
+    echo "Usage: rf [--ver <version> ] [--repo <repo>] [--branch <branch>]"
+    echo "  where"
+    echo "      version = 10 | 11 | 12 | 13 | 14 | pre | development"
+    echo "      repo = free | nonfree | fixes"
+    echo "      branch = releases | updates | updates-testing"
+    exit 1;
+}
+
+reindex_development(){
+cd $RFDIR/$REPO/fedora/$VERSION/rawhide
+
+find . -type f -name "*.rpm" -exec chmod 644 {} \;
+find . -type f -name "*.rpm" -exec chown 0.0 {} \;
+
+# source
+rm -v $(repomanage -o source/SRPMS/) 2> /dev/null
+createrepo -d --update source/SRPMS/
+
+for arch in $ARCH; do
+
+  # debug
+  rm -v $(repomanage -o $arch/debug/) 2> /dev/null
+  createrepo -d --update $arch/debug/
+
+  # arch
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d --update -g /root/comps/rawhide/russianfedora-$REPO.xml \
+      --deltas $OLDPACKDIR --oldpackagedirs $RFDIR/$REPO/fedora/$VERSION/rawhide/$arch/os/ \
+      $RFDIR/$REPO/fedora/$VERSION/rawhide/$arch/os/
+
+  rm -v $(repomanage -o $arch/os/) 2> /dev/null
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d --update -g /root/comps/rawhide/russianfedora-$REPO.xml \
+      --deltas $RFDIR/$REPO/fedora/$VERSION/rawhide/$arch/os/
+
+done
+}
+
+reindex_pre(){
+cd $RFDIR/$REPO/fedora/development/$PRE
+
+find . -type f -name "*.rpm" -exec chmod 644 {} \;
+find . -type f -name "*.rpm" -exec chown 0.0 {} \;
+
+# source
+rm -v $(repomanage -o source/SRPMS/) 2> /dev/null
+createrepo -d --update source/SRPMS/
+
+for arch in $ARCH; do
+
+  # debug
+  rm -v $(repomanage -o $arch/debug/) 2> /dev/null
+  createrepo -d --update $arch/debug/
+
+  # arch
+  if [ "$REPO" == "fixes" ]; then
+    OLDPACKDIR=" --oldpackagedirs $DEVDIR/$arch/os/Packages/"
+  fi
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d -g /root/comps/rawhide/russianfedora-$REPO.xml \
+      --deltas $OLDPACKDIR --oldpackagedirs $RFDIR/$REPO/fedora/development/$PRE/$arch/os/ \
+      $RFDIR/$REPO/fedora/development/$PRE/$arch/os/
+
+  rm -v $(repomanage -o $arch/os/) 2> /dev/null
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d --update -g /root/comps/$PRE/russianfedora-$REPO.xml \
+      --deltas $RFDIR/$REPO/fedora/development/$PRE/$arch/os/
+done
+}
+
+reindex_releases(){
+cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/
+
+find . -type f -name "*.rpm" -exec chmod 644 {} \;
+find . -type f -name "*.rpm" -exec chown 0.0 {} \;
+
+rm -v $(repomanage -o source/SRPMS/) 2> /dev/null
+createrepo -d --update source/SRPMS/
+
+for arch in $ARCH; do
+  rm -v $(repomanage -o $arch/debug/) 2> /dev/null
+  createrepo -d --update $arch/debug/
+
+  # First make deltas then remove old rpms then reindex again
+  /usr/sbin/chroot /root/fedora-chroot createrepo -x *debuginfo* --deltas \
+      --oldpackagedirs $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/$arch/os/ -d --update \
+      -g /root/comps/$VERSION/russianfedora-$REPO.xml $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/$arch/os/
+
+  rm -v $(repomanage -o $arch/os/) 2> /dev/null
+
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -x *debuginfo* -d --update -g /root/comps/$VERSION/russianfedora-$REPO.xml \
+      --deltas $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/$arch/os/
+done
+}
+
+reindex_updates(){
+cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/
+
+find . -type f -name "*.rpm" -exec chmod 644 {} \;
+find . -type f -name "*.rpm" -exec chown 0.0 {} \;
+
+# source
+rm -v $(repomanage -o SRPMS/) 2> /dev/null
+createrepo -d --update SRPMS/
+
+for arch in $ARCH; do
+  # debug
+  rm -v $(repomanage -o $arch/debug/) 2> /dev/null
+  createrepo -d --update $arch/debug/
+
+  # arch
+  if [ "$REPO" == "fixes" ]; then
+    OLDPACKDIR=" --oldpackagedirs $UPDATESDIR/$VERSION/$arch/ --oldpackagedirs $RELEASEDIR/$VERSION/Everything/$arch/os/Packages/"
+  fi
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d -g /root/comps/$VERSION/russianfedora-$REPO.xml \
+      -x *debuginfo* --deltas $OLDPACKDIR --oldpackagedirs=$RFDIR/$REPO/fedora/updates/$VERSION/$arch/ \
+      --oldpackagedirs=$RFDIR/$REPO/fedora/releases/$VERSION/Everything/$arch/os/ \
+      $RFDIR/$REPO/fedora/updates/$VERSION/$arch/
+
+  rm -v $(repomanage -o $arch) 2> /dev/null
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d -g /root/comps/$VERSION/russianfedora-$REPO.xml \
+      --deltas -x *debuginfo* $RFDIR/$REPO/fedora/updates/$VERSION/$arch/
+done
+}
+
+reindex_updates-testing(){
+cd $RFDIR/$REPO/fedora/updates/testing/$VERSION/
+
+find . -type f -name "*.rpm" -exec chmod 644 {} \;
+find . -type f -name "*.rpm" -exec chown 0.0 {} \;
+
+# source
+rm -v $(repomanage -o SRPMS/) 2> /dev/null
+createrepo -d --update SRPMS/
+
+for arch in $ARCH; do
+  rm -v $(repomanage -o $arch/debug/) 2> /dev/null
+  createrepo -d --update $arch/debug/
+
+  if [ "$REPO" == "fixes" ]; then
+    OLDPACKDIR=" --oldpackagedirs $UPDATESDIR/$VERSION/$arch/ --oldpackagedirs $RELEASEDIR/$VERSION/Everything/$arch/os/Packages/ --oldpackagedirs $UPTESTDIR/$VERSION/$arch/"
+  fi
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d -g /root/comps/$VERSION/russianfedora-$REPO.xml \
+      -x *debuginfo* --deltas $OLDPACKDIR --oldpackagedirs $RFDIR/$REPO/fedora/updates/$VERSION/$arch/ \
+      --oldpackagedirs $RFDIR/$REPO/fedora/updates/testing/$VERSION/$arch/ \
+      --oldpackagedirs $RFDIR/$REPO/fedora/releases/$VERSION/Everything/$arch/os/ $RFDIR/$REPO/fedora/updates/testing/$VERSION/$arch/
+
+  rm -v $(repomanage -o $arch) 2> /dev/null
+
+  /usr/sbin/chroot /root/fedora-chroot createrepo -d -g /root/comps/$VERSION/russianfedora-$REPO.xml \
+      --deltas -x *debuginfo* $RFDIR/$REPO/fedora/updates/testing/$VERSION/$arch/
+done
+}
+
+if [ "$(id -u)" != "0" ]; then
+	echo "Run progrum under superuser. Abort..."
+	exit 1;
+fi
+
+ARCH="i386 x86_64"
+RFDIR="/mirror/fedora/russianfedora/russianfedora"
+DEVDIR="/mirror/fedora/linux/development/$PRE/"
+UPDATESDIR="/mirror/fedora/linux/updates/"
+UPTESTDIR="/mirror/fedora/linux/updates/testing/"
+RELEASEDIR="/mirror/fedora/linux/releases/"
+SOURCEDIR="/home/ashejn/rf"
+REINDEX="false"
+
+while [ $# -gt 0 ]; do
+  case $1 in
+    --ver)
+      VERSION=$2
+      shift; shift
+      ;;
+    --repo)
+      REPO=$2
+      shift; shift
+      ;;
+    --branch)
+      BRANCH=$2
+      shift; shift
+      ;;
+    --help)
+      usage
+      ;;
+    *)
+      usage
+     ;;
+  esac
+done
+
+if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
+  DIRECTORIES=$(find $SOURCEDIR -type f -name "*.rpm" | cut -d "/" -f -7 | uniq)
+
+  for i in $DIRECTORIES; do
+    VERSION=$(echo $i | awk -F/ '{ print $5}')
+    REPO=$(echo $i | awk -F/ '{ print $6}')
+
+    if [ "$VERSION" == "development" ]; then
+      BRANCH="development/rawhide"
+    elif [ "$VERSION" == "pre" ]; then
+      BRANCH="development/$PRE"
+    else
+      BRANCH=$(echo $i | awk -F/ '{ print $7}')
+    fi
+
+    case $BRANCH in
+      development/rawhide)
+	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/source/SRPMS/
+	mv -v $SOURCEDIR/$VERSION/$REPO/development/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/debug/
+	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+
+	for noarch in $(ls $SOURCEDIR/$VERSION/$REPO/development/*.noarch.rpm); do
+ 	  mv -v $noarch $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+	  cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+	  ln -vf ../../i386/os/$(basename $noarch)
+	  cd -
+	done
+
+	mv -v $SOURCEDIR/$VERSION/$REPO/development/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
+	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+
+	reindex_development
+	REINDEX="true"
+	;;
+      development/16)
+        mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/source/SRPMS/
+        mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/debug/
+        mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+
+        for noarch in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.noarch.rpm); do
+          mv -v $noarch $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+          cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
+          ln -vf ../../i386/os/$(basename $noarch)
+          cd -
+        done
+
+        mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
+        mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/os/
+
+        reindex_pre
+        REINDEX="true"
+        ;;
+      releases)
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/source/SRPMS/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/debug
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/os/
+
+	for noarch in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.noarch.rpm); do
+  	  mv -v $noarch $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/os/
+	  cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/os/
+	  ln -vf ../../i386/os/$(basename $noarch)
+	  cd -
+	done
+
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/debug/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/os/
+
+	reindex_releases
+	REINDEX="true"
+	;;
+      updates)
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/SRPMS/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/debug
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/
+
+	for noarch in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.noarch.rpm); do
+	  mv -v $noarch $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/
+	  cd $RFDIR/$REPO/fedora/$BRANCH/$VERSION/x86_64/
+	  ln -vf ../i386/$(basename $noarch)
+	  cd -
+	done
+
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/debug/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/
+
+	reindex_updates
+	REINDEX="true"
+	;;
+      updates-testing)
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/SRPMS/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/debug
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/
+
+	for noarch in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.noarch.rpm); do
+	  mv -v $noarch $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/
+	  cd $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/
+	  ln -vf ../i386/$(basename $noarch)
+	  cd -
+	done
+
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/debug/
+	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/
+
+	reindex_updates-testing
+	REINDEX="true"
+	;;
+      *)
+	exit 1;
+    esac
+  done
+  if [ "$REINDEX" == "true" ]; then
+    echo "$(date -u)" > /mirror/fedora/russianfedora/.mirror.yandex.ru
+  fi
+else
+  if [ "$REPO" != "free" -a "$REPO" != "nonfree" -a "$REPO" != "fixes" ]; then
+    echo "Not supporting repository. Abort..."
+    usage
+  fi
+
+  if [ "$VERSION" != "development" -a "$VERSION" != "15" -a "$VERSION" != "16" -a "$VERSION" != "14" -a "$VERSION" != "pre" ]; then
+    echo "Not supporting version. Abort..."
+    usage
+  fi
+
+  if [ "$BRANCH" != "" -a "$VERSION" == "development" ]; then
+    echo "Do not select branch for development. Abort..."
+    exit 1;
+  elif [ "$BRANCH" != "" -a "$VERSION" == "pre" ]; then
+    echo "Do not select branch for pre. Abort..."
+    exit 1;
+  elif [ "$BRANCH" == "" -a "$VERSION" == "development" ]; then
+    echo OK
+  elif [ "$BRANCH" == "" -a "$VERSION" == "pre" ]; then
+    echo OK
+  elif [ "$BRANCH" != "releases" -a "$BRANCH" != "updates" -a "$BRANCH" != "updates-testing" ]; then
+    echo "Not supporting branch. Abort..."
+    usage
+  fi
+
+  if [ "$VERSION" == "development" ]; then
+    reindex_development
+  fi
+
+  if [ "$VERSION" == "pre" ]; then
+    reindex_pre
+  fi
+
+  if [ "$BRANCH" == "releases" ]; then
+    reindex_releases
+  fi
+
+  if [ "$BRANCH" == "updates" ]; then
+    reindex_updates
+  fi
+
+  if [ "$BRANCH" == "updates-testing" ]; then
+    reindex_updates-testing
+  fi
+
+  echo "$(date -u)" > /mirror/fedora/russianfedora/.mirror.yandex.ru
+fi
