@@ -164,8 +164,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/el/$BRANCH/$VERSION/Everything/i386/debug/
@@ -193,8 +193,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/el/$BRANCH/$VERSION/i386/debug/
@@ -222,8 +222,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/el/updates/testing/$VERSION/i386/debug/

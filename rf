@@ -215,6 +215,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 
     case $BRANCH in
       development/rawhide)
+        unset LINK32PACKS
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/source/SRPMS/
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/debug/
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
@@ -226,8 +227,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/development/*.i?86.rpm | grep -v "debuginfo" | grep -v "mypaint" | grep -v "opera" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/development/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
@@ -235,7 +236,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 
         cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
         for pack in $LINK32PACKS; do
-          ln -vf ../../i386/$pack
+          ln -vf ../../i386/os/$pack
         done
         cd -
 
@@ -243,6 +244,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	REINDEX="true"
 	;;
       development/$PRE)
+        unset LINK32PACKS
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/source/SRPMS/
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/debug/
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
@@ -254,8 +256,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
           cd -
         done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/pre/*.i?86.rpm | grep -v "debuginfo" | grep -v "mypaint" | grep -v "opera" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
         mv -v $SOURCEDIR/$VERSION/$REPO/pre/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/i386/debug/
@@ -263,7 +265,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 
         cd $RFDIR/$REPO/fedora/$BRANCH/x86_64/os/
         for pack in $LINK32PACKS; do
-          ln -vf ../../i386/$pack
+          ln -vf ../../i386/os/$pack
         done
         cd -
 
@@ -271,6 +273,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
         REINDEX="true"
         ;;
       releases)
+        unset LINK32PACKS
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/source/SRPMS/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/debug
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/x86_64/os/
@@ -282,8 +285,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "mypaint" | grep -v "opera" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/Everything/i386/debug/
@@ -311,8 +314,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "mypaint" | grep -v "opera" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/$BRANCH/$VERSION/i386/debug/
@@ -328,6 +331,7 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	REINDEX="true"
 	;;
       updates-testing)
+        unset LINK32PACKS
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.src.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/SRPMS/
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.x86_64.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/debug
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.x86_64.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/x86_64/
@@ -339,8 +343,8 @@ if [ "$REPO" == "" -a "$VERSION" == "" -a "$BRANCH" == "" ]; then
 	  cd -
 	done
 
-        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo"); do
-          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
+        for lib in $(ls $SOURCEDIR/$VERSION/$REPO/$BRANCH/*.i?86.rpm | grep -v "debuginfo" | grep -v "mypaint" | grep -v "opera" | grep -v "java-1.6.0-sun"); do
+          $(rpm -qlp $lib 2>/dev/null | grep "/usr/lib/" | grep -v "/usr/lib/python" > /dev/null) && LINK32PACKS="$LINK32PACKS $(basename $lib)"
         done
 
 	mv -v $SOURCEDIR/$VERSION/$REPO/$BRANCH/*debuginfo*.i?86.rpm $RFDIR/$REPO/fedora/updates/testing/$VERSION/i386/debug/
